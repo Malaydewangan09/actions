@@ -101,7 +101,7 @@ jobs:
 
       # Upload JAR for PR
       - name: Publish - Jar artifacts for PR only
-        uses: kestra-io/actions/composite/jar-upload@main
+        uses: Malaydewangan09/actions/composite/jar-upload@main
         if: ${{ inputs.generate-shadowjar == true && github.event_name == 'pull_request' && startsWith(github.repository, 'kestra-io/') }}
         with:
           secrets: ${{ toJSON(secrets) }}
