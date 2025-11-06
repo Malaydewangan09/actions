@@ -67,86 +67,100 @@ class CommentUpdate {
             });
     }
 
-    async _fetchUnreleasedCommits(): Promise<{ latestTag: string; commits: any[] }> {
-        try {
-            core.info(`🔍 Fetching unreleased commits using GitHub API...`);
-
-            const owner = this.owner;
-            const repo = this.repo;
-
-            let latestTag: string | null = null;
+        async _fetchUnreleasedCommits(): Promise<{ latestTag: string; commits: any[] }> {
             try {
-                const release = await this.octokit.rest.repos.getLatestRelease({ owner, repo });
-                latestTag = release.data.tag_name ?? null;
-                core.info(`📦 Latest release tag detected: ${latestTag}`);
-            } catch (e: any) {
-                core.debug(`No release found — falling back to tags: ${e.message}`);
-                const tags = await this.octokit.rest.repos.listTags({ owner, repo, per_page: 5 });
-                if (tags.data.length > 0) {
-                    latestTag = tags.data[0].name ?? null;
-                    core.info(`🏷️ Latest tag detected: ${latestTag}`);
-                }
-            }
+                core.info(`🔍 Fetching unreleased commits using GitHub API...`);
 
-            if (!latestTag) {
-                core.warning(`⚠️ No tags or releases found in repository`);
+                const owner = this.owner;
+                const repo = this.repo;
+
+                let latestTag: string | null = null;
+                try {
+                    const release = await this.octokit.rest.repos.getLatestRelease({ owner, repo });
+                    latestTag = release.data.tag_name ?? null;
+                    core.info(`📦 Latest release tag detected: ${latestTag}`);
+                } catch (e: any) {
+                    core.debug(`No release found — falling back to tags: ${e.message}`);
+                    const tags = await this.octokit.rest.repos.listTags({ owner, repo, per_page: 5 });
+                    if (tags.data.length > 0) {
+                        latestTag = tags.data[0].name ?? null;
+                        core.info(`🏷️ Latest tag detected: ${latestTag}`);
+                    }
+                }
+
+                if (!latestTag) {
+                    core.warning(`⚠️ No tags or releases found in repository`);
+                    return { latestTag: "unknown", commits: [] };
+                }
+
+                let defaultBranch = "main";
+                try {
+                    const repoInfo = await this.octokit.rest.repos.get({ owner, repo });
+                    defaultBranch = repoInfo.data.default_branch ?? "main";
+                    core.debug(`Default branch detected: ${defaultBranch}`);
+                } catch (err: any) {
+                    core.warning(`Could not determine default branch, fallback to 'main'`);
+                }
+
+                let normalizedTag = latestTag;
+                if (!normalizedTag.startsWith("v")) {
+                    normalizedTag = `v${normalizedTag}`;
+                }
+
+                let compare;
+                try {
+                    // Try explicit tag ref first
+                    compare = await this.octokit.rest.repos.compareCommits({
+                        owner,
+                        repo,
+                        base: `refs/tags/${latestTag}`,
+                        head: defaultBranch,
+                    });
+
+                    // Fallback if response empty
+                    if (!compare?.data?.commits?.length) {
+                        core.debug(`Compare with refs/tags returned no commits — retrying without prefix`);
+                        compare = await this.octokit.rest.repos.compareCommits({
+                            owner,
+                            repo,
+                            base: latestTag,
+                            head: defaultBranch,
+                        });
+                    }
+                } catch (err) {
+                    core.warning(`Compare failed: ${err.message}`);
+                }
+
+                const commits = (compare.data.commits ?? [])
+                    .filter((c: any) => {
+                        const msg = (c.commit?.message ?? '').trim().toLowerCase();
+                        return !(
+                            msg.startsWith('chore(version): bump to') ||
+                            msg.startsWith('chore(version): update to version')
+                        );
+                    })
+                    .map((c: any) => ({
+                        sha: c.sha,
+                        message: c.commit?.message?.split('\n')[0],
+                        author: c.commit?.author?.name ?? c.author?.login ?? 'unknown',
+                        date: c.commit?.author?.date ?? c.commit?.committer?.date,
+                    }));
+
+                core.info(`📝 Found ${commits.length} unreleased commits since ${latestTag}`);
+
+                core.info(`Comparing ${latestTag} -> ${defaultBranch}`);
+                core.info(`Compare URL: https://api.github.com/repos/${owner}/${repo}/compare/${latestTag}...${defaultBranch}`);
+                core.info(`Ahead by: ${compare?.data?.ahead_by}`);
+                core.info(`Commits found: ${compare?.data?.commits?.length}`);
+
+
+                
+                return { latestTag, commits };
+            } catch (err: any) {
+                core.warning(`⚠️ Could not fetch unreleased commits: ${err.message}`);
                 return { latestTag: "unknown", commits: [] };
             }
-
-            let defaultBranch = "main";
-            try {
-                const repoInfo = await this.octokit.rest.repos.get({ owner, repo });
-                defaultBranch = repoInfo.data.default_branch ?? "main";
-                core.debug(`Default branch detected: ${defaultBranch}`);
-            } catch (err: any) {
-                core.warning(`Could not determine default branch, fallback to 'main'`);
-            }
-
-            let normalizedTag = latestTag;
-            if (!normalizedTag.startsWith("v")) {
-                normalizedTag = `v${normalizedTag}`;
-            }
-
-            let compare: any;
-            try {
-                compare = await this.octokit.rest.repos.compareCommits({
-                    owner,
-                    repo,
-                    base: normalizedTag,
-                    head: defaultBranch,
-                });
-            } catch (err: any) {
-                core.debug(`Compare with 'v' prefix failed, retrying without prefix`);
-                compare = await this.octokit.rest.repos.compareCommits({
-                    owner,
-                    repo,
-                    base: latestTag,
-                    head: defaultBranch,
-                });
-            }
-
-            const commits = (compare.data.commits ?? [])
-                .filter((c: any) => {
-                    const msg = (c.commit?.message ?? '').trim().toLowerCase();
-                    return !(
-                        msg.startsWith('chore(version): bump to') ||
-                        msg.startsWith('chore(version): update to version')
-                    );
-                })
-                .map((c: any) => ({
-                    sha: c.sha,
-                    message: c.commit?.message?.split('\n')[0],
-                    author: c.commit?.author?.name ?? c.author?.login ?? 'unknown',
-                    date: c.commit?.author?.date ?? c.commit?.committer?.date,
-                }));
-
-            core.info(`📝 Found ${commits.length} unreleased commits since ${latestTag}`);
-            return { latestTag, commits };
-        } catch (err: any) {
-            core.warning(`⚠️ Could not fetch unreleased commits: ${err.message}`);
-            return { latestTag: "unknown", commits: [] };
         }
-    }
 
 
     async _buildData() {
