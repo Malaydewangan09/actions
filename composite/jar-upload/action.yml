@@ -48,7 +48,7 @@
           fetch-unreleased: 'true'
           template: |
             {% if unreleased and unreleased.commits | length > 0 %}
-            ## 📦 Unreleased Commits (since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main) - {{ unreleased.commits | length }} commits)
+            ## 📦 Unreleased Commits <sub>(since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main) - {{ unreleased.commits | length }} commits)</sub>
 
             | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
