@@ -51,7 +51,7 @@
             {% if unreleased and unreleased.commits | length > 0 %}
             **(since `{{ unreleased.latestTag }}`)**
 
-            | SHA | Message | Author | Date |
+            | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
             {%- for c in unreleased.commits %}
             | [`{{ c.sha | slice(0,7) }}`](https://github.com/{{ owner }}/{{ repo }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date | prettyDate }} |

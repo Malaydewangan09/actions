@@ -37819,6 +37819,11 @@ class CommentUpdate {
             data["unreleased"] = unreleased;
             coreExports.info(`Included ${unreleased.commits.length} unreleased commits since ${unreleased.latestTag}`);
         }
+        data["owner"] = this.owner;
+        data["repo"] = this.repo;
+        data["github"] = {
+            repository: `${this.owner}/${this.repo}`,
+        };
         coreExports.debug(`Generated data:\n${JSON.stringify(data, undefined, 2)}`);
         return data;
     }
