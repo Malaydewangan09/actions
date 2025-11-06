@@ -50,18 +50,18 @@
           template: |
             {% if unreleased and unreleased.commits | length > 0 %}
             📝 **Since [`{{ unreleased.latestTag }}`](https://github.com/{{ owner }}/{{ repo }}/compare/{{ unreleased.latestTag }}...main)** ({{ unreleased.commits | length }} commits)
+            
             {%- for c in unreleased.commits %}
             | [`{{ c.sha | slice(0,7) }}`](https://github.com/{{ owner }}/{{ repo }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
             {%- endfor %}
-            {% else %}
-            
+          
             | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
             {%- for c in unreleased.commits %}
             | 🔗 [{{ c.sha | slice(0,7) }}](https://github.com/{{ owner }}/{{ repo }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date | prettyDate }} |
             {%- endfor %}
-            
-            
+
+            {% else %}
             ✅ No unreleased commits found — everything is up to date!
             {% endif %}
       
