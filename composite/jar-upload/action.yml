@@ -49,16 +49,16 @@
           fetch-unreleased: 'true'
           template: |
             {% if unreleased and unreleased.commits | length > 0 %}
+            📝 **Unreleased Commits** (since `{{ unreleased.latestTag }}`)
 
             | SHA | Message | Author | Date |
-            | :--- | :------ | :----- | :--- |
+            | :--- | :------ | :------ | :---- |
             {%- for c in unreleased.commits %}
-            | [`{{ c.sha[0:7] }}`](https://github.com/{{ payload.repository.full_name }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date }} |
+            | [`{{ c.sha | slice(0,7) }}`](https://github.com/{{ github.repository }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date | prettyDate }} |
             {%- endfor %}
 
             {% else %}
-
             ✅ No unreleased commits found — everything is up to date!
-
             {% endif %}
+          
   
