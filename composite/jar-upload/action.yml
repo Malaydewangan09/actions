@@ -54,7 +54,7 @@
             | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
             {%- for c in unreleased.commits %}
-            |🔗 [`{{ c.sha[:7] }}`](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
+            |🔗 [`{{ c.sha | truncate(7, true, "") }}`](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
             {%- endfor %}
 
             {% else %}
