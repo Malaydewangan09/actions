@@ -32,3 +32,22 @@ runs:
           | [![{{ artifact.name }}](https://img.shields.io/badge/Download%20{{ artifact.name }}-8405FF?style=flat-square)]({{ artifact.download_url }}) | {{ artifact.size_in_bytes | prettySize }} | {{ artifact.updated_at | prettyDate }} | {{ artifact.expires_at | prettyDate }} |
           {%- endfor %}
           {% endif %}
+
+    - name: Unreleased Commits - Comment pull request
+      uses: kestra-io/actions/actions/comment-update@main
+      continue-on-error: true
+      with:
+        github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
+        title: "📝 Unreleased Commits"
+        add-summary: 'false'
+        template: |
+          {% if unreleased and unreleased.commits | length > 0 %}
+          | SHA | Message | Author | Date |
+          | :-- | :------- | :------ | :---- |
+          {% for c in unreleased.commits %}
+          | [`{{ c.sha }}`](https://github.com/{{ github.repository }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date }} |
+          {% endfor %}
+          {% else %}
+          ✅ No unreleased commits found — everything is up to date!
+          {% endif %}
+

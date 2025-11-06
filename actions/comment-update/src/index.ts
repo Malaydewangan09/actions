@@ -67,6 +67,31 @@ class CommentUpdate {
             });
     }
 
+    async _fetchUnreleasedCommits(): Promise<{ latestTag: string; commits: any[] }> {
+        const { execSync } = await import("child_process");
+        try {
+            const latestTag = execSync("git describe --tags --abbrev=0").toString().trim();
+            const rawLog = execSync(
+                `git log ${latestTag}..main --pretty=format:'%h|%s|%an|%ad' --date=short`
+            ).toString();
+
+            const commits = rawLog
+                .split("\n")
+                .filter(Boolean)
+                .map((line) => {
+                    const [sha, message, author, date] = line.split("|");
+                    return { sha, message, author, date };
+                });
+
+            core.info(`Found ${commits.length} unreleased commits since ${latestTag}`);
+            return { latestTag, commits };
+        } catch (err: any) {
+            core.warning(`Could not fetch unreleased commits: ${err.message}`);
+            return { latestTag: "unknown", commits: [] };
+        }
+    }
+
+
     async _buildData() {
         let data: Record<any, any> = {...github.context, ...{}}
 
@@ -80,6 +105,12 @@ class CommentUpdate {
                 const current = JSON.parse(fs.readFileSync(file, { encoding: 'utf8', flag: 'r' }));
                 data["files"][index] = current;
             }
+        }
+
+        if (github.context.eventName === "pull_request") {
+            const unreleased = await this._fetchUnreleasedCommits();
+            data["unreleased"] = unreleased;
+            core.info(`Included ${unreleased.commits.length} unreleased commits since ${unreleased.latestTag}`);
         }
 
         core.debug(`Generated data:\n${JSON.stringify(data, undefined, 2)}`);
