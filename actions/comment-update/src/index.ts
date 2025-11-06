@@ -69,7 +69,7 @@ class CommentUpdate {
 
         async _fetchUnreleasedCommits(): Promise<{ latestTag: string; commits: any[] }> {
             try {
-                core.info(`🔍 Fetching unreleased commits using GitHub API...`);
+                core.debug(`🔍 Fetching unreleased commits using GitHub API...`);
 
                 const owner = this.owner;
                 const repo = this.repo;
@@ -78,18 +78,18 @@ class CommentUpdate {
                 try {
                     const release = await this.octokit.rest.repos.getLatestRelease({ owner, repo });
                     latestTag = release.data.tag_name ?? null;
-                    core.info(`📦 Latest release tag detected: ${latestTag}`);
+                    core.debug(`📦 Latest release tag detected: ${latestTag}`);
                 } catch (e: any) {
                     core.debug(`No release found — falling back to tags: ${e.message}`);
                     const tags = await this.octokit.rest.repos.listTags({ owner, repo, per_page: 5 });
                     if (tags.data.length > 0) {
                         latestTag = tags.data[0].name ?? null;
-                        core.info(`🏷️ Latest tag detected: ${latestTag}`);
+                        core.debug(`🏷️ Latest tag detected: ${latestTag}`);
                     }
                 }
 
                 if (!latestTag) {
-                    core.warning(`⚠️ No tags or releases found in repository`);
+                    core.debug(`⚠️ No tags or releases found in repository`);
                     return { latestTag: "unknown", commits: [] };
                 }
 
@@ -99,7 +99,7 @@ class CommentUpdate {
                     defaultBranch = repoInfo.data.default_branch ?? "main";
                     core.debug(`Default branch detected: ${defaultBranch}`);
                 } catch (err: any) {
-                    core.warning(`Could not determine default branch, fallback to 'main'`);
+                    core.debug(`Could not determine default branch, fallback to 'main'`);
                 }
 
                 let normalizedTag = latestTag;
@@ -146,14 +146,12 @@ class CommentUpdate {
                         date: c.commit?.author?.date ?? c.commit?.committer?.date,
                     }));
 
-                core.info(`📝 Found ${commits.length} unreleased commits since ${latestTag}`);
+                core.debug(`📝 Found ${commits.length} unreleased commits since ${latestTag}`);
 
-                core.info(`Comparing ${latestTag} -> ${defaultBranch}`);
-                core.info(`Compare URL: https://api.github.com/repos/${owner}/${repo}/compare/${latestTag}...${defaultBranch}`);
-                core.info(`Ahead by: ${compare?.data?.ahead_by}`);
-                core.info(`Commits found: ${compare?.data?.commits?.length}`);
-
-
+                core.debug(`Comparing ${latestTag} -> ${defaultBranch}`);
+                core.debug(`Compare URL: https://api.github.com/repos/${owner}/${repo}/compare/${latestTag}...${defaultBranch}`);
+                core.debug(`Ahead by: ${compare?.data?.ahead_by}`);
+                core.debug(`Commits found: ${compare?.data?.commits?.length}`);
                 
                 return { latestTag, commits };
             } catch (err: any) {
