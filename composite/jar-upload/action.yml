@@ -49,27 +49,12 @@
           fetch-unreleased: 'true'
           template: |
             {% if unreleased and unreleased.commits | length > 0 %}
-            📝 **Since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main)** ({{ unreleased.commits | length }} commits)
+            📜 **Since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main)** ({{ unreleased.commits | length }} commits)
 
-            ### Option 1: Without slice filter
             | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
             {%- for c in unreleased.commits %}
-            | [`{{ c.sha }}`](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
-            {%- endfor %}
-
-            ### Option 2: Without backticks
-            | SHA | Title | Author | Date |
-            | :--- | :------ | :------ | :---- |
-            {%- for c in unreleased.commits %}
-            | [{{ c.sha | slice(0,7) }}](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
-            {%- endfor %}
-
-            ### Option 3: With emoji
-            | SHA | Title | Author | Date |
-            | :--- | :------ | :------ | :---- |
-            {%- for c in unreleased.commits %}
-            | [🔗 {{ c.sha | slice(0,7) }}](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
+            | [`{{ c.sha[:7] }}`](https://github.com/${{ github.repository }}/commit/{{ c.sha }}) | {{ c.message | trim }} | {{ c.author }} | {{ c.date | prettyDate }} |
             {%- endfor %}
 
             {% else %}
