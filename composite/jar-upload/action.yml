@@ -1,53 +1,60 @@
-name: 'Upload Jar'
-description: 'This action uploads the jar as artifact and comments the download link on the pull request'
+  name: 'Upload Jar'
+  description: 'This action uploads the jar as artifact and comments the download link on the pull request'
 
-inputs:
-  secrets:
-    description: 'Secrets passed as toJSON'
-    required: true
+  inputs:
+    secrets:
+      description: 'Secrets passed as toJSON'
+      required: true
 
-runs:
-  using: composite
-  steps:
-    - name: Artifacts - Upload JAR
-      uses: actions/upload-artifact@v4
-      with:
-        name: jar
-        path: "**/build/libs/*.jar"
-        retention-days: 7
+  runs:
+    using: composite
+    steps:
+      - name: Artifacts - Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar
+          path: "**/build/libs/*.jar"
+          retention-days: 7
 
-    - name: Artifacts - Comment pull request
-      uses: kestra-io/actions/actions/comment-update@main
-      continue-on-error: true
-      with:
-        github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
-        title: "📦 Artifacts"
-        fetch-artifact: 'true'
-        add-summary: 'false'
-        template: |
-          {% if artifacts | length > 0 %}
-          | Name | Size | Updated | Expiration |
-          | :--- | :--- | :--- | :--- |
-          {%- for artifact in artifacts %}
-          | [![{{ artifact.name }}](https://img.shields.io/badge/Download%20{{ artifact.name }}-8405FF?style=flat-square)]({{ artifact.download_url }}) | {{ artifact.size_in_bytes | prettySize }} | {{ artifact.updated_at | prettyDate }} | {{ artifact.expires_at | prettyDate }} |
-          {%- endfor %}
-          {% endif %}
+      - name: Artifacts - Comment pull request
+        uses: kestra-io/actions/actions/comment-update@main
+        continue-on-error: true
+        with:
+          github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
+          title: "📦 Artifacts"
+          fetch-artifact: 'true'
+          add-summary: 'false'
+          template: |
+            {% if artifacts | length > 0 %}
+            | Name | Size | Updated | Expiration |
+            | :--- | :--- | :--- | :--- |
+            {%- for artifact in artifacts %}
+            | [![{{ artifact.name }}](https://img.shields.io/badge/Download%20{{ artifact.name }}-8405FF?style=flat-square)]({{ artifact.download_url }}) | {{ artifact.size_in_bytes | prettySize }} | {{ artifact.updated_at | prettyDate }} | {{ artifact.expires_at | prettyDate }} |
+            {%- endfor %}
+            {% endif %}
 
-    - name: Unreleased Commits - Comment pull request
-      uses: Malaydewangan09/actions/actions/comment-update@main
-      continue-on-error: true
-      with:
-        github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
-        title: "📝 Unreleased Commits"
-        add-summary: 'false'
-        template: |
-          {% if unreleased and unreleased.commits | length > 0 %}
-          | SHA | Message | Author | Date |
-          | :-- | :------- | :------ | :---- |
-          {% for c in unreleased.commits %}
-          | [`{{ c.sha }}`](https://github.com/{{ github.repository }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date }} |
-          {% endfor %}
-          {% else %}
-          ✅ No unreleased commits found — everything is up to date!
-          {% endif %}
+      - name: Debug - Check event type
+        shell: bash
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event: ${{ github.event }}"
 
+      - name: Unreleased Commits - Comment pull request
+        uses: Malaydewangan09/actions/actions/comment-update@main
+        continue-on-error: true
+        with:
+          github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
+          title: "📝 Unreleased Commits"
+          add-summary: 'false'
+          fetch-unreleased: 'true'
+          template: |
+            {% if unreleased and unreleased.commits | length > 0 %}
+            | SHA | Message | Author | Date |
+            | :-- | :------- | :------ | :---- |
+            {% for c in unreleased.commits %}
+            | [`{{ c.sha }}`](https://github.com/{{ github.repository }}/commit/{{ c.sha }}) | {{ c.message }} | {{ c.author }} | {{ c.date }} |
+            {% endfor %}
+            {% else %}
+            ✅ No unreleased commits found — everything is up to date!
+            {% endif %}
+  

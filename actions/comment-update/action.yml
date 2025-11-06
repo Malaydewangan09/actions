@@ -32,6 +32,11 @@ inputs:
     description: The files to inject as data in the template
     required: false
 
+  fetch-unreleased:
+    description: Does we fetch the unreleased commits
+    required: false
+    default: 'false'
+
 outputs:
   comment-id:
     description: The comment id that was created or updated

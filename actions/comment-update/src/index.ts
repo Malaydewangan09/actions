@@ -19,6 +19,7 @@ class CommentUpdate {
     private readonly owner: string;
     private readonly repo: string;
     private readonly prId: number;
+    private readonly fetchUnreleased: boolean;
 
     constructor() {
         this.octokit = github.getOctokit(core.getInput('github-token'));
@@ -28,6 +29,7 @@ class CommentUpdate {
         this.fetchArtifact = core.getBooleanInput('fetch-artifact');
         this.addSummary = core.getBooleanInput('add-summary');
         this.files = core.getMultilineInput('files');
+        this.fetchUnreleased = core.getBooleanInput('fetch-unreleased');
 
         this.nunjucks = new nunjucks.Environment();
         this.nunjucks
@@ -176,7 +178,7 @@ class CommentUpdate {
             }
         }
 
-        if (github.context.eventName === "pull_request") {
+        if (this.fetchUnreleased) {
             const unreleased = await this._fetchUnreleasedCommits();
             data["unreleased"] = unreleased;
             core.info(`Included ${unreleased.commits.length} unreleased commits since ${unreleased.latestTag}`);
