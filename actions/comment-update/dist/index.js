@@ -37781,6 +37781,7 @@ class CommentUpdate {
                 .filter((c) => {
                 const msg = (c.commit?.message ?? '').trim().toLowerCase();
                 return !(msg.startsWith('chore(version): bump to') ||
+                    msg.startsWith('chore(version): update snapshot') ||
                     msg.startsWith('chore(version): update to version'));
             })
                 .map((c) => ({
