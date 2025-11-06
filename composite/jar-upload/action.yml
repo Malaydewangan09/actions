@@ -44,11 +44,12 @@
         continue-on-error: true
         with:
           github-token: ${{ fromJson(inputs.secrets).GITHUB_TOKEN }}
+          title: "🔄 Unreleased Commits"
           add-summary: 'false'
           fetch-unreleased: 'true'
           template: |
             {% if unreleased and unreleased.commits | length > 0 %}
-            ## 📦 Unreleased Commits <small>(since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main) - {{ unreleased.commits | length }} commits)</small>
+            Since [`{{ unreleased.latestTag }}`](https://github.com/${{ github.repository }}/compare/{{ unreleased.latestTag }}...main) ({{ unreleased.commits | length }} commits)
             
             | SHA | Title | Author | Date |
             | :--- | :------ | :------ | :---- |
